@@ -40,15 +40,19 @@ else #linux
         libvulkan1 \
         vulkan-tools
 
-    #install clang and build tools
+    # install clang and build tools
     VERSION=$(lsb_release -rs | cut -d. -f1)
-    # Since Ubuntu 17 clang is part of the core repository
-    # See https://packages.ubuntu.com/search?keywords=clang-8
-    # if [ "$VERSION" -lt "17" ]; then
-    #     wget -O - http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-    #     sudo apt-get update
-    # fi
-    sudo apt-get install -y clang-12 clang++-12 libc++-12-dev libc++abi-12-dev libstdc++-12-dev
+    if [ "$VERSION" -gt "22" ]; then
+        clang_version='14'
+    else
+        clang_version='12'
+    fi
+    sudo apt-get install -y \
+        clang-$clang_version \
+        clang++-$clang_version \
+        libc++-$clang_version-dev \
+        libc++abi-$clang_version-dev \
+        libstdc++-$clang_version-dev
 fi
 
 if ! which cmake; then
@@ -89,9 +93,10 @@ else #linux
     sudo apt-get install -y build-essential unzip libunwind-dev
 
     if version_less_than_equal_to $cmake_ver $MIN_CMAKE_VERSION; then
-        # in ubuntu 18 docker CI, avoid building cmake from scratch to save time
-        # ref: https://apt.kitware.com/
-        if [ "$(lsb_release -rs)" == "18.04" ]; then
+        VERSION=$(lsb_release -rs | cut -d. -f1)
+        # For Ubuntu 18 and up, avoid building cmake from scratch to save time
+        # ref: https://apt.kitware.com
+        if [ "$VERSION" -ge "18" ]; then
             sudo apt-get -y install \
                 apt-transport-https \
                 ca-certificates \
